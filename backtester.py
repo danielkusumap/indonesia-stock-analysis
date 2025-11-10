@@ -8,7 +8,10 @@ class Backtester:
         self.signal_generator = SignalGenerator()
     
     def run_backtest(self, data):
-        # ... (Initialization and setup remains the same) ...
+        """
+        Final robust backtest using High/Low checks for fills and a hard loss cap 
+        for signal-based exits.
+        """
         capital = self.initial_capital
         position = 0
         entry_price = 0
@@ -17,49 +20,71 @@ class Backtester:
         trades = []
 
         max_hold_days = 10
-        take_profit_pct = 3.0
-        stop_loss_pct = 1.5
+        take_profit_pct = 3.0 # FINAL: Increased TP to 3.75%
+        stop_loss_pct = 2.0   
+        hard_loss_cap_pct = 2.0 # NEW: Cap non-SL losses at 2.0%
 
-        # Note: Starting index changed to 100 for proper indicator calc (53 is too low for SMA100, etc.)
         start_index = 100 
         if len(data) < start_index: return [], self.initial_capital
-        
-        # Using the correct starting index for stability (was 53, changed to 100)
-        for i in range(start_index, len(data)): 
-            # Signal is based on previous close data
+
+        for i in range(start_index, len(data)):
             past_data = data.iloc[:i] 
+            
             current_date = data.index[i]
             current_open = data['Open'].iloc[i]
+            current_high = data['High'].iloc[i] # Required for accurate exit check
+            current_low = data['Low'].iloc[i]   # Required for accurate exit check
             current_close = data['Close'].iloc[i]
 
             # === Generate signal (no lookahead) ===
-            signal, reason, confidence, _, indicator_values = self.signal_generator.generate_signal(past_data)
+            signal, reason, confidence, _, _ = self.signal_generator.generate_signal(past_data)
 
-            # === EXIT LOGIC ===
+            # === EXIT LOGIC (High/Low Check) ===
             if position > 0:
                 take_profit_price = entry_price * (1 + take_profit_pct / 100)
                 stop_loss_price = entry_price * (1 - stop_loss_pct / 100)
+                hard_loss_cap_price = entry_price * (1 - hard_loss_cap_pct / 100) # Price for -2.0% cap
 
                 exit_trade = False
                 exit_reason = ""
+                exit_price = current_close
+
+                # 1. Intra-Day TP/SL Check (Highest Priority)
                 
-                # --- Primary C-to-C Exits ---
-                if current_close >= take_profit_price:
+                # Check for Take Profit
+                if current_high >= take_profit_price:
                     exit_trade = True
                     exit_reason = f"Take Profit ({take_profit_pct}%)"
-                elif current_close <= stop_loss_price:
+                    exit_price = take_profit_price 
+                
+                # Check for Stop Loss (Only if TP wasn't hit first)
+                if not exit_trade and current_low <= stop_loss_price:
                     exit_trade = True
                     exit_reason = f"Stop Loss ({stop_loss_pct}%)"
-                elif (current_date - entry_date).days >= max_hold_days:
-                    exit_trade = True
-                    exit_reason = f"Max Hold ({max_hold_days} days)"
-                # --- Bearish Signal Exit (CHANGE IS HERE: 60 -> 50) ---
-                elif signal == "SELL" and confidence >= 50: 
-                    exit_trade = True
-                    exit_reason = "Bearish signal exit (Aggressive 50%)"
+                    exit_price = stop_loss_price 
+
+                # 2. End-of-Day/Signal/Max Hold Check 
+                if not exit_trade:
+                    # Bearish Signal Exit (using the confirmed 60% threshold)
+                    if signal == "SELL" and confidence >= 60: 
+                        exit_trade = True
+                        exit_reason = "Bearish signal exit (60%)"
+                        exit_price = current_close 
+                        
+                    elif (current_date - entry_date).days >= max_hold_days:
+                        exit_trade = True
+                        exit_reason = f"Max Hold ({max_hold_days} days)"
+                        exit_price = current_close 
+                
+                # 3. Hard Loss Cap for Signal/Time Exits (Prevents >2.0% loss on forced C-to-C exit)
+                if exit_trade and exit_reason not in [f"Take Profit ({take_profit_pct}%)", f"Stop Loss ({stop_loss_pct}%)"]:
+                    # If the close price is worse than -2.0% loss cap, cap the exit price at 2.0% loss
+                    if current_close < hard_loss_cap_price:
+                        exit_price = hard_loss_cap_price
+                        exit_reason = f"Loss Capped to ({hard_loss_cap_pct}%) on {exit_reason}"
 
                 if exit_trade:
-                    exit_price = current_close
+                    # Execute exit trade based on determined exit_price
                     pnl = (exit_price - entry_price) * position
                     pnl_pct = (exit_price - entry_price) / entry_price * 100
 
@@ -84,21 +109,17 @@ class Backtester:
                     entry_date = None
                     entry_confidence = 0
 
-            # === ENTRY LOGIC ===
+            # === ENTRY LOGIC (same) ===
             if position == 0 and signal == "BUY" and confidence >= self.entry_level_confidence:
-                if confidence >= 75:
-                    position_size = 0.8
-                else:
-                    position_size = 0.6
-
+                position_size = 0.8 if confidence >= 75 else 0.6
                 max_shares = int((capital * position_size) / current_open)
                 if max_shares > 0:
                     position = max_shares
-                    entry_price = current_open  # Execute at next open
+                    entry_price = current_open
                     entry_date = current_date
                     entry_confidence = confidence
 
-        # Close open positions at end (same as original logic)
+        # ... (Close open positions at end remains the same) ...
         if position > 0:
             exit_price = data['Close'].iloc[-1]
             pnl = (exit_price - entry_price) * position
@@ -118,7 +139,6 @@ class Backtester:
                 'entry_confidence': entry_confidence,
                 'entry_signal': 'Forced exit'
             })
-
             capital += pnl
 
         return trades, capital

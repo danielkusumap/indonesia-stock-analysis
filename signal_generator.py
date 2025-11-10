@@ -88,18 +88,6 @@ class SignalGenerator:
         sell_confidence = 0
         buy_reasons_raw = []
         sell_reasons_raw = []
-        
-        # --- Ichimoku Check ---
-        ichimoku_data = self.indicators.calculate_ichimoku_cloud(data)
-        ichimoku_bullish_momentum = False
-        if ichimoku_data and ichimoku_data.get('cloud_top') and ichimoku_data.get('kijun_sen'):
-            # Price is ABOVE the Cloud
-            price_above_cloud = current_price > ichimoku_data['cloud_top']
-            # Tenkan is ABOVE the Kijun (TK Cross)
-            tk_cross_bullish = ichimoku_data['tenkan_sen'] > ichimoku_data['kijun_sen']
-            
-            if price_above_cloud and tk_cross_bullish:
-                ichimoku_bullish_momentum = True
 
         # --- BUY CONFIDENCE LOGIC (Stable Weights + Ichimoku) ---
 
@@ -122,11 +110,7 @@ class SignalGenerator:
             if is_reversal_confirmation:
                 buy_confidence += 20 
                 buy_reasons_raw.append("Reversal Confirmed (RSI/Stoch) (+20)")
-
-        # >>> NEW ICHIMOKU CONDITION ADDED HERE <<<
-        if ichimoku_bullish_momentum:
-            buy_confidence += 15
-            buy_reasons_raw.append("Ichimoku Confirmed Bullish Momentum (+15)")
+                
         # ----------------------------------------
             
         if macd_crossing_up_from_neg:

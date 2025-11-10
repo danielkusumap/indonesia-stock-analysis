@@ -149,3 +149,28 @@ class TechnicalIndicators:
             'tk_cross_bearish': tk_cross_bearish,
             'valid': True
         }
+    
+    @staticmethod
+    def calculate_adx(data, period=14):
+        df = data.copy()
+        df['TR'] = np.maximum.reduce([
+            df['High'] - df['Low'],
+            abs(df['High'] - df['Close'].shift(1)),
+            abs(df['Low'] - df['Close'].shift(1))
+        ])
+        df['+DM'] = np.where((df['High'] - df['High'].shift(1)) > (df['Low'].shift(1) - df['Low']),
+                            np.maximum(df['High'] - df['High'].shift(1), 0), 0)
+        df['-DM'] = np.where((df['Low'].shift(1) - df['Low']) > (df['High'] - df['High'].shift(1)),
+                            np.maximum(df['Low'].shift(1) - df['Low'], 0), 0)
+        
+        df['TR14'] = df['TR'].rolling(window=period).sum()
+        df['+DM14'] = df['+DM'].rolling(window=period).sum()
+        df['-DM14'] = df['-DM'].rolling(window=period).sum()
+        
+        df['+DI14'] = 100 * (df['+DM14'] / df['TR14'])
+        df['-DI14'] = 100 * (df['-DM14'] / df['TR14'])
+        
+        df['DX'] = (abs(df['+DI14'] - df['-DI14']) / (df['+DI14'] + df['-DI14'])) * 100
+        df['ADX'] = df['DX'].rolling(window=period).mean()
+        
+        return df['ADX']

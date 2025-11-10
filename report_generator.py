@@ -52,80 +52,80 @@ class ReportGenerator:
         print(f"📊 Signal: {report['signal']} | 🔒 Confidence: {report['confidence']}%")
         print(f"📝 Reason: {report['reason']}")
         
-        # Technical Indicators Summary
-        print(f"\n--- 📈 TECHNICAL INDICATORS SUMMARY ---")
-        ind = report['indicator_values']
-        print(f"RSI (14): {ind['rsi']:.1f} {'🔴 OVERSOLD' if ind['rsi'] < 35 else '🟢 OVERBOUGHT' if ind['rsi'] > 65 else '⚪ NEUTRAL'}")
-        print(f"MA Trend: {'🟢 BULLISH' if report['current_price'] > ind['sma_20'] > ind['sma_50'] else '🔴 BEARISH'}")
-        print(f"MACD: {'🟢 BULLISH' if ind['macd_bullish'] else '🔴 BEARISH'}")
-        print(f"Stochastic: {ind['stochastic_k']:.1f}/{ind['stochastic_d']:.1f} {'🔴 OVERSOLD' if ind['stochastic_k'] < 20 else '🟢 OVERBOUGHT' if ind['stochastic_k'] > 80 else '⚪ NEUTRAL'}")
-        print(f"ATR (Volatility): {ind['atr']:.1f} ({(ind['atr']/report['current_price']*100):.1f}%)")
-        print(f"Volume: {'🟢 HIGH' if ind['volume_ratio'] > 1.5 else '🔴 LOW'} ({ind['volume_ratio']:.1f}x average)")
-        print(f"Bollinger Squeeze: {'🟢 ACTIVE' if ind['bb_squeeze'] else '🔴 INACTIVE'}")
-        print(f"Multi-timeframe MA Alignment: {'🟢 STRONG BULLISH' if ind['bullish_alignment_5_20'] else '🔴 BEARISH'}")
-        print(f"Price vs MAs: {'🟢 ABOVE ALL' if ind['price_above_all_sma'] else '🔴 BELOW ALL'}")
+        # # Technical Indicators Summary
+        # print(f"\n--- 📈 TECHNICAL INDICATORS SUMMARY ---")
+        # ind = report['indicator_values']
+        # print(f"RSI (14): {ind['rsi']:.1f} {'🔴 OVERSOLD' if ind['rsi'] < 35 else '🟢 OVERBOUGHT' if ind['rsi'] > 65 else '⚪ NEUTRAL'}")
+        # print(f"MA Trend: {'🟢 BULLISH' if report['current_price'] > ind['sma_20'] > ind['sma_50'] else '🔴 BEARISH'}")
+        # print(f"MACD: {'🟢 BULLISH' if ind['macd_bullish'] else '🔴 BEARISH'}")
+        # print(f"Stochastic: {ind['stochastic_k']:.1f}/{ind['stochastic_d']:.1f} {'🔴 OVERSOLD' if ind['stochastic_k'] < 20 else '🟢 OVERBOUGHT' if ind['stochastic_k'] > 80 else '⚪ NEUTRAL'}")
+        # print(f"ATR (Volatility): {ind['atr']:.1f} ({(ind['atr']/report['current_price']*100):.1f}%)")
+        # print(f"Volume: {'🟢 HIGH' if ind['volume_ratio'] > 1.5 else '🔴 LOW'} ({ind['volume_ratio']:.1f}x average)")
+        # print(f"Bollinger Squeeze: {'🟢 ACTIVE' if ind['bb_squeeze'] else '🔴 INACTIVE'}")
+        # print(f"Multi-timeframe MA Alignment: {'🟢 STRONG BULLISH' if ind['bullish_alignment_5_20'] else '🔴 BEARISH'}")
+        # print(f"Price vs MAs: {'🟢 ABOVE ALL' if ind['price_above_all_sma'] else '🔴 BELOW ALL'}")
         
-        # Ichimoku Cloud Analysis
-        if ind['ichimoku']:
-            ich = ind['ichimoku']
-            print(f"\n--- ☁️  ICHIMOKU CLOUD ANALYSIS ---")
-            print(f"Tenkan/Kijun: {ich['tenkan_sen']:,.0f}/{ich['kijun_sen']:,.0f} {'🟢 BULLISH' if ich['tenkan_sen'] > ich['kijun_sen'] else '🔴 BEARISH'}")
-            print(f"Cloud: {'🟢 BULLISH' if ich['cloud_bullish'] else '🔴 BEARISH'} (Span A: {ich['senkou_span_a']:,.0f} | Span B: {ich['senkou_span_b']:,.0f})")
-            print(f"Position: {'🟢 ABOVE CLOUD' if ich['price_above_cloud'] else '🔴 BELOW CLOUD' if ich['price_below_cloud'] else '⚪ IN CLOUD'}")
-            print(f"TK Cross: {'🟢 BULLISH' if ich['tk_cross_bullish'] else '🔴 BEARISH' if ich['tk_cross_bearish'] else '⚪ NEUTRAL'}")
-            print(f"Chikou Span: {ich['chikou_span']:,.0f} {'🟢 BULLISH' if ich['chikou_span'] > report['current_price'] else '🔴 BEARISH'}")
+        # # Ichimoku Cloud Analysis
+        # if ind['ichimoku']:
+        #     ich = ind['ichimoku']
+        #     print(f"\n--- ☁️  ICHIMOKU CLOUD ANALYSIS ---")
+        #     print(f"Tenkan/Kijun: {ich['tenkan_sen']:,.0f}/{ich['kijun_sen']:,.0f} {'🟢 BULLISH' if ich['tenkan_sen'] > ich['kijun_sen'] else '🔴 BEARISH'}")
+        #     print(f"Cloud: {'🟢 BULLISH' if ich['cloud_bullish'] else '🔴 BEARISH'} (Span A: {ich['senkou_span_a']:,.0f} | Span B: {ich['senkou_span_b']:,.0f})")
+        #     print(f"Position: {'🟢 ABOVE CLOUD' if ich['price_above_cloud'] else '🔴 BELOW CLOUD' if ich['price_below_cloud'] else '⚪ IN CLOUD'}")
+        #     print(f"TK Cross: {'🟢 BULLISH' if ich['tk_cross_bullish'] else '🔴 BEARISH' if ich['tk_cross_bearish'] else '⚪ NEUTRAL'}")
+        #     print(f"Chikou Span: {ich['chikou_span']:,.0f} {'🟢 BULLISH' if ich['chikou_span'] > report['current_price'] else '🔴 BEARISH'}")
         
-        # Support & Resistance Levels
-        print(f"\n--- 🎯 SUPPORT & RESISTANCE LEVELS ---")
+        # # Support & Resistance Levels
+        # print(f"\n--- 🎯 SUPPORT & RESISTANCE LEVELS ---")
         
-        # Volume Profile Levels
-        if ind['volume_support'] and ind['volume_resistance']:
-            print(f"📊 VOLUME PROFILE (20 days):")
-            vol_support_pct = (ind['volume_support'] - report['current_price']) / report['current_price'] * 100
-            vol_resistance_pct = (ind['volume_resistance'] - report['current_price']) / report['current_price'] * 100
-            print(f"   🟢 Strong Support: {ind['volume_support']:,.0f} IDR ({vol_support_pct:+.1f}%)")
-            print(f"   🔴 Strong Resistance: {ind['volume_resistance']:,.0f} IDR ({vol_resistance_pct:+.1f}%)")
-            if ind['poc']:
-                poc_pct = (ind['poc'] - report['current_price']) / report['current_price'] * 100
-                print(f"   ⚡ Point of Control: {ind['poc']:,.0f} IDR ({poc_pct:+.1f}%)")
+        # # Volume Profile Levels
+        # if ind['volume_support'] and ind['volume_resistance']:
+        #     print(f"📊 VOLUME PROFILE (20 days):")
+        #     vol_support_pct = (ind['volume_support'] - report['current_price']) / report['current_price'] * 100
+        #     vol_resistance_pct = (ind['volume_resistance'] - report['current_price']) / report['current_price'] * 100
+        #     print(f"   🟢 Strong Support: {ind['volume_support']:,.0f} IDR ({vol_support_pct:+.1f}%)")
+        #     print(f"   🔴 Strong Resistance: {ind['volume_resistance']:,.0f} IDR ({vol_resistance_pct:+.1f}%)")
+        #     if ind['poc']:
+        #         poc_pct = (ind['poc'] - report['current_price']) / report['current_price'] * 100
+        #         print(f"   ⚡ Point of Control: {ind['poc']:,.0f} IDR ({poc_pct:+.1f}%)")
         
-        # Bollinger Bands
-        if ind['bb_support'] and ind['bb_resistance']:
-            print(f"📏 BOLLINGER BANDS (20,2):")
-            bb_support_pct = (ind['bb_support'] - report['current_price']) / report['current_price'] * 100
-            bb_resistance_pct = (ind['bb_resistance'] - report['current_price']) / report['current_price'] * 100
-            band_width = (ind['bb_resistance'] - ind['bb_support']) / report['current_price'] * 100
-            print(f"   🟢 Dynamic Support: {ind['bb_support']:,.0f} IDR ({bb_support_pct:+.1f}%)")
-            print(f"   🔴 Dynamic Resistance: {ind['bb_resistance']:,.0f} IDR ({bb_resistance_pct:+.1f}%)")
-            print(f"   📊 Band Width: {band_width:.1f}% {'🟢 LOW' if band_width < 4 else '🔴 HIGH'}")
+        # # Bollinger Bands
+        # if ind['bb_support'] and ind['bb_resistance']:
+        #     print(f"📏 BOLLINGER BANDS (20,2):")
+        #     bb_support_pct = (ind['bb_support'] - report['current_price']) / report['current_price'] * 100
+        #     bb_resistance_pct = (ind['bb_resistance'] - report['current_price']) / report['current_price'] * 100
+        #     band_width = (ind['bb_resistance'] - ind['bb_support']) / report['current_price'] * 100
+        #     print(f"   🟢 Dynamic Support: {ind['bb_support']:,.0f} IDR ({bb_support_pct:+.1f}%)")
+        #     print(f"   🔴 Dynamic Resistance: {ind['bb_resistance']:,.0f} IDR ({bb_resistance_pct:+.1f}%)")
+        #     print(f"   📊 Band Width: {band_width:.1f}% {'🟢 LOW' if band_width < 4 else '🔴 HIGH'}")
         
-        # Fibonacci Levels
-        print(f"📐 FIBONACCI RETRACEMENT (60 days):")
-        for level, price in list(report['fib_levels'].items())[:3]:
-            level_name = level.replace('fib_', '')
+        # # Fibonacci Levels
+        # print(f"📐 FIBONACCI RETRACEMENT (60 days):")
+        # for level, price in list(report['fib_levels'].items())[:3]:
+        #     level_name = level.replace('fib_', '')
             
-            # FIXED: Proper distance calculation
-            distance_pct = ((price - report['current_price']) / report['current_price']) * 100
+        #     # FIXED: Proper distance calculation
+        #     distance_pct = ((price - report['current_price']) / report['current_price']) * 100
             
-            if price < report['current_price']:
-                status = "🟢 SUPPORT"
-                direction = "below"
-                display_pct = f"{abs(distance_pct):.1f}%"
-            else:
-                status = "🔴 RESISTANCE"
-                direction = "above" 
-                display_pct = f"{distance_pct:+.1f}%"
+        #     if price < report['current_price']:
+        #         status = "🟢 SUPPORT"
+        #         direction = "below"
+        #         display_pct = f"{abs(distance_pct):.1f}%"
+        #     else:
+        #         status = "🔴 RESISTANCE"
+        #         direction = "above" 
+        #         display_pct = f"{distance_pct:+.1f}%"
             
-            print(f"   Fib {level_name}%: {price:,.0f} IDR ({display_pct} {direction}) | {status}")
+        #     print(f"   Fib {level_name}%: {price:,.0f} IDR ({display_pct} {direction}) | {status}")
         
-        # Ichimoku Future Levels
-        if ind['ichimoku']:
-            ich = ind['ichimoku']
-            ich_support_pct = (ich['cloud_top'] - report['current_price']) / report['current_price'] * 100
-            ich_resistance_pct = (ich['senkou_span_a'] - report['current_price']) / report['current_price'] * 100
-            print(f"☁️  ICHIMOKU FUTURE LEVELS:")
-            print(f"   🟢 Cloud Support: {ich['cloud_top']:,.0f} IDR ({ich_support_pct:+.1f}%)")
-            print(f"   🔴 Cloud Resistance: {ich['senkou_span_a']:,.0f} IDR ({ich_resistance_pct:+.1f}%)")
+        # # Ichimoku Future Levels
+        # if ind['ichimoku']:
+        #     ich = ind['ichimoku']
+        #     ich_support_pct = (ich['cloud_top'] - report['current_price']) / report['current_price'] * 100
+        #     ich_resistance_pct = (ich['senkou_span_a'] - report['current_price']) / report['current_price'] * 100
+        #     print(f"☁️  ICHIMOKU FUTURE LEVELS:")
+        #     print(f"   🟢 Cloud Support: {ich['cloud_top']:,.0f} IDR ({ich_support_pct:+.1f}%)")
+        #     print(f"   🔴 Cloud Resistance: {ich['senkou_span_a']:,.0f} IDR ({ich_resistance_pct:+.1f}%)")
         
         # Trading Plan (only for BUY signals)
         if report['trading_plan']:

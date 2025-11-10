@@ -8,60 +8,62 @@ class Backtester:
         self.signal_generator = SignalGenerator()
     
     def run_backtest(self, data):
+        # ... (Initialization and setup remains the same) ...
         capital = self.initial_capital
         position = 0
         entry_price = 0
         entry_date = None
         entry_confidence = 0
         trades = []
+
+        max_hold_days = 10
+        take_profit_pct = 3.0
+        stop_loss_pct = 1.5
+
+        # Note: Starting index changed to 100 for proper indicator calc (53 is too low for SMA100, etc.)
+        start_index = 100 
+        if len(data) < start_index: return [], self.initial_capital
         
-        # DAILY DATA PARAMETERS
-        max_hold_days = 10  # n-day max hold for daily data
-        take_profit_pct = 3.0  # 3% take profit for daily trades
-        stop_loss_pct = 1.5    # 1.5% stop loss for daily trades
-        
-        for i in range(52, len(data)):  # Start from 52 for Ichimoku
-            current_data = data.iloc[:i+1]
+        # Using the correct starting index for stability (was 53, changed to 100)
+        for i in range(start_index, len(data)): 
+            # Signal is based on previous close data
+            past_data = data.iloc[:i] 
             current_date = data.index[i]
-            current_price = data['Close'].iloc[i]
-            
-            # Generate signal
-            signal, reason, confidence, _, indicator_values = self.signal_generator.generate_signal(current_data)
-            
-            # EXIT LOGIC: For daily data
+            current_open = data['Open'].iloc[i]
+            current_close = data['Close'].iloc[i]
+
+            # === Generate signal (no lookahead) ===
+            signal, reason, confidence, _, indicator_values = self.signal_generator.generate_signal(past_data)
+
+            # === EXIT LOGIC ===
             if position > 0:
-                current_pnl_pct = (current_price - entry_price) / entry_price * 100
-                
-                # Fixed percentages for daily data (simpler)
-                take_profit_price = entry_price * (1 + take_profit_pct/100)
-                stop_loss_price = entry_price * (1 - stop_loss_pct/100)
-                
+                take_profit_price = entry_price * (1 + take_profit_pct / 100)
+                stop_loss_price = entry_price * (1 - stop_loss_pct / 100)
+
                 exit_trade = False
                 exit_reason = ""
                 
-                # Exit conditions for daily data
-                if current_price >= take_profit_price:
+                # --- Primary C-to-C Exits ---
+                if current_close >= take_profit_price:
                     exit_trade = True
                     exit_reason = f"Take Profit ({take_profit_pct}%)"
-                elif current_price <= stop_loss_price:
+                elif current_close <= stop_loss_price:
                     exit_trade = True
                     exit_reason = f"Stop Loss ({stop_loss_pct}%)"
                 elif (current_date - entry_date).days >= max_hold_days:
                     exit_trade = True
                     exit_reason = f"Max Hold ({max_hold_days} days)"
-                
-                # Optional: Exit if signal turns bearish (for daily data)
-                hold_days = (current_date - entry_date).days
-                if hold_days >= 1 and signal == "SELL" and confidence >= 60:
+                # --- Bearish Signal Exit (CHANGE IS HERE: 60 -> 50) ---
+                elif signal == "SELL" and confidence >= 50: 
                     exit_trade = True
-                    exit_reason = "Bearish signal exit"
-                
+                    exit_reason = "Bearish signal exit (Aggressive 50%)"
+
                 if exit_trade:
-                    exit_price = current_price
+                    exit_price = current_close
                     pnl = (exit_price - entry_price) * position
                     pnl_pct = (exit_price - entry_price) / entry_price * 100
-                    
-                    trade = {
+
+                    trades.append({
                         'entry_date': entry_date,
                         'exit_date': current_date,
                         'entry_price': entry_price,
@@ -74,42 +76,35 @@ class Backtester:
                         'hold_days': (current_date - entry_date).days,
                         'entry_confidence': entry_confidence,
                         'entry_signal': reason
-                    }
-                    trades.append(trade)
-                    
+                    })
+
                     capital += pnl
                     position = 0
                     entry_price = 0
                     entry_date = None
                     entry_confidence = 0
-            
-            # ENTRY LOGIC: Only enter if no position and BUY signal with configurable confidence
+
+            # === ENTRY LOGIC ===
             if position == 0 and signal == "BUY" and confidence >= self.entry_level_confidence:
-                # Position sizing based on signal strength
                 if confidence >= 75:
-                    position_size = 0.8  # 80% for high confidence
-                elif confidence >= self.entry_level_confidence:
-                    position_size = 0.6  # 60% for base confidence level
+                    position_size = 0.8
                 else:
-                    continue  # Skip if below entry_level_confidence
-                
-                max_shares = int((capital * position_size) / current_price)
-                
+                    position_size = 0.6
+
+                max_shares = int((capital * position_size) / current_open)
                 if max_shares > 0:
                     position = max_shares
-                    entry_price = current_price
+                    entry_price = current_open  # Execute at next open
                     entry_date = current_date
                     entry_confidence = confidence
-                    # Store entry details
-                    # print(f"📈 ENTRY: {current_date.strftime('%Y-%m-%d')} | Price: {current_price:,.0f} | Confidence: {confidence}% | Required: {self.entry_level_confidence}%")
-        
-        # Close any open position at the end of backtest period
+
+        # Close open positions at end (same as original logic)
         if position > 0:
             exit_price = data['Close'].iloc[-1]
             pnl = (exit_price - entry_price) * position
             pnl_pct = (exit_price - entry_price) / entry_price * 100
-            
-            trade = {
+
+            trades.append({
                 'entry_date': entry_date,
                 'exit_date': data.index[-1],
                 'entry_price': entry_price,
@@ -122,12 +117,12 @@ class Backtester:
                 'hold_days': (data.index[-1] - entry_date).days,
                 'entry_confidence': entry_confidence,
                 'entry_signal': 'Forced exit'
-            }
-            trades.append(trade)
-            
+            })
+
             capital += pnl
-        
+
         return trades, capital
+
     
     def calculate_performance(self, trades):
         if not trades:
